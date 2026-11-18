@@ -17,11 +17,11 @@ PlasmoidItem {
 
     readonly property string command: {
         const url = Qt.resolvedUrl("../code/read.sh").toString();
-        return "sh '" + decodeURIComponent(url.replace(/^file:\/\//, "")) + "'";
+        return Logic.buildCommand(decodeURIComponent(url.replace(/^file:\/\//, "")));
     }
 
     property var prevReading: null
-    property bool cpuNoPerm: false
+    property var hintList: []
     property var cpuW: null
     property var cpuC: null
     property var gpuW: null
@@ -35,9 +35,9 @@ PlasmoidItem {
 
     function handle(text) {
         const r = Logic.parseReading(text);
-        cpuW = Logic.cpuWatts(prevReading, r);
+        cpuW = Logic.cpuWatts(prevReading, r, Logic.maxDtFor(intervalSec));
         prevReading = r;
-        cpuNoPerm = r.cpuNoPerm;
+        hintList = Logic.hints(r);
         cpuC = Logic.toCelsius(r.cpuTempMc);
         gpuW = Logic.toWatts(r.gpuPowerUw);
         gpuC = Logic.toCelsius(r.gpuTempMc);
@@ -75,27 +75,56 @@ PlasmoidItem {
 
     compactRepresentation: MouseArea {
         id: compact
-        Layout.preferredWidth: root.vertical ? -1 : lines.implicitWidth
-        Layout.minimumWidth: root.vertical ? -1 : lines.implicitWidth
+
+        // Feste Breite nach dem breitesten Fall, damit das Panel nicht bei jeder
+        // Ziffernänderung springt.
+        readonly property real stableWidth: Math.max(widest.advanceWidth, single.implicitWidth)
+            + Kirigami.Units.smallSpacing * 2
+
+        Layout.preferredWidth: root.vertical ? -1 : stableWidth
+        Layout.minimumWidth: root.vertical ? -1 : stableWidth
         Layout.preferredHeight: root.vertical ? lines.implicitHeight : -1
         hoverEnabled: true
-        onClicked: root.expanded = !root.expanded
+
+        // Muster aus Plasmas DefaultCompactRepresentation: Ein Klick bei offenem
+        // Popup soll es schließen und nicht sofort wieder öffnen.
+        property bool wasExpanded: false
+        onPressed: wasExpanded = root.expanded
+        onClicked: root.expanded = !wasExpanded
+
+        TextMetrics {
+            id: widest
+            font: single.font
+            text: Logic.panelText({ cpuW: 888, cpuC: 88, gpuW: 888, gpuC: 88 })
+        }
+
+        PlasmaComponents.Label {
+            id: single
+            visible: !root.vertical
+            anchors.centerIn: parent
+            text: Logic.panelText(root.current)
+        }
 
         ColumnLayout {
             id: lines
+            visible: root.vertical
             anchors.centerIn: parent
-            width: root.vertical ? parent.width : implicitWidth
+            width: parent.width
             spacing: 0
 
-            Repeater {
-                model: root.vertical ? Logic.panelLines(root.current) : [Logic.panelText(root.current)]
-                PlasmaComponents.Label {
-                    Layout.fillWidth: root.vertical
-                    horizontalAlignment: Text.AlignHCenter
-                    text: modelData
-                    fontSizeMode: root.vertical ? Text.HorizontalFit : Text.FixedSize
-                    minimumPixelSize: Kirigami.Theme.smallFont.pixelSize
-                }
+            PlasmaComponents.Label {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                text: Logic.panelLines(root.current)[0]
+                fontSizeMode: Text.HorizontalFit
+                minimumPixelSize: Kirigami.Theme.smallFont.pixelSize
+            }
+            PlasmaComponents.Label {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                text: Logic.panelLines(root.current)[1]
+                fontSizeMode: Text.HorizontalFit
+                minimumPixelSize: Kirigami.Theme.smallFont.pixelSize
             }
         }
     }
@@ -158,13 +187,15 @@ PlasmoidItem {
             opacity: 0.7
             font: Kirigami.Theme.smallFont
         }
-        PlasmaComponents.Label {
-            Layout.fillWidth: true
-            visible: root.cpuNoPerm
-            wrapMode: Text.WordWrap
-            color: Kirigami.Theme.neutralTextColor
-            text: "CPU-Watt: kein Leserecht – einmalig <code>sudo ./install-permissions.sh</code> ausführen"
-            textFormat: Text.StyledText
+        Repeater {
+            model: root.hintList
+            PlasmaComponents.Label {
+                required property string modelData
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                color: Kirigami.Theme.neutralTextColor
+                text: modelData
+            }
         }
     }
 }

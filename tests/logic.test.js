@@ -84,3 +84,27 @@ test("formatTempLong für das Popup", () => {
   assert.equal(L.formatTempLong(62.4), "62 °C");
   assert.equal(L.formatTempLong(null), "–");
 });
+
+test("Fix: Intervall 10 s mit Jitter ergibt trotzdem CPU-Watt", () => {
+  const w = L.cpuWatts(reading(0, 5e6), reading(10.2e9, 5e6 + 10.2 * 45e6), L.maxDtFor(10));
+  assert.ok(Math.abs(w - 45) < 1e-9);
+  assert.equal(L.maxDtFor(1), 10e9);
+  assert.equal(L.maxDtFor(10), 30e9);
+  assert.equal(L.cpuWatts(reading(0, 5e6), reading(60e9, 5e6 + 60 * 45e6), L.maxDtFor(10)), null);
+});
+
+test("Fix: Befehl mit timeout, damit ein hängendes Skript nicht alles blockiert", () => {
+  assert.equal(L.buildCommand("/a/b/read.sh"), "timeout 3 sh '/a/b/read.sh'");
+});
+
+test("Fix: Hinweise bei fehlendem Leserecht oder Sensor", () => {
+  const ok = L.parseReading("ts_ns=1\ncpu_energy_uj=5\ncpu_energy_max_uj=9\ncpu_temp_mc=1\ngpu_power_uw=1\ngpu_temp_mc=1\n");
+  assert.deepEqual(L.hints(ok), []);
+  assert.deepEqual(L.hints(L.parseReading("cpu_energy_uj=noperm\ncpu_temp_mc=1\ngpu_power_uw=1\n")),
+    ["CPU-Watt: kein Leserecht – einmalig sudo ./install-permissions.sh ausführen"]);
+  assert.deepEqual(L.hints(L.parseReading("")), [
+    "CPU-Watt: kein RAPL-Zähler gefunden",
+    "CPU-Temperatur: kein Sensor gefunden (k10temp/zenpower)",
+    "GPU: kein amdgpu-Sensor gefunden",
+  ]);
+});

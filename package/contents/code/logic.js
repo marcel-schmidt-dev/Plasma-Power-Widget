@@ -34,12 +34,16 @@ function parseReading(text) {
   return r;
 }
 
-function cpuWatts(prev, cur) {
+// Längster erlaubter Abstand zweier Messungen: 10 s, bei langen Intervallen 3 Takte.
+function maxDtFor(intervalSec) { return Math.max(MAX_DT_NS, 3 * intervalSec * 1e9); }
+
+function cpuWatts(prev, cur, maxDtNs) {
+  if (maxDtNs === undefined) maxDtNs = MAX_DT_NS;
   if (!prev || !cur) return null;
   if (prev.cpuEnergyUj === null || cur.cpuEnergyUj === null) return null;
   if (prev.tsNs === null || cur.tsNs === null) return null;
   var dt = cur.tsNs - prev.tsNs;
-  if (dt <= 0 || dt > MAX_DT_NS) return null;
+  if (dt <= 0 || dt > maxDtNs) return null;
   var delta = cur.cpuEnergyUj - prev.cpuEnergyUj;
   if (delta < 0) {
     if (cur.cpuEnergyMaxUj === null) return null;
@@ -79,9 +83,22 @@ function panelLines(s) {
 
 function panelText(s) { return panelLines(s).join(" │ "); }
 
+// timeout: ein hängender sysfs-Zugriff blockiert sonst alle weiteren Takte.
+function buildCommand(scriptPath) { return "timeout 3 sh '" + scriptPath + "'"; }
+
+function hints(r) {
+  var out = [];
+  if (r.cpuNoPerm) out.push("CPU-Watt: kein Leserecht – einmalig sudo ./install-permissions.sh ausführen");
+  else if (r.cpuEnergyUj === null) out.push("CPU-Watt: kein RAPL-Zähler gefunden");
+  if (r.cpuTempMc === null) out.push("CPU-Temperatur: kein Sensor gefunden (k10temp/zenpower)");
+  if (r.gpuPowerUw === null && r.gpuTempMc === null) out.push("GPU: kein amdgpu-Sensor gefunden");
+  return out;
+}
+
 if (typeof module !== "undefined") {
   module.exports = { EMOJI: EMOJI, parseReading: parseReading, cpuWatts: cpuWatts,
                      toWatts: toWatts, toCelsius: toCelsius, pushSample: pushSample,
                      peak: peak, formatWatts: formatWatts, formatTemp: formatTemp, formatTempLong: formatTempLong,
-                     panelText: panelText, panelLines: panelLines };
+                     panelText: panelText, panelLines: panelLines, maxDtFor: maxDtFor,
+                     buildCommand: buildCommand, hints: hints };
 }
