@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Logik-Tests
+        run: npm test
+      - name: read.sh
+        run: bash tests/read_test.sh
+      - name: Rechte-Skripte
+        run: bash tests/permissions_test.sh
+      - name: shellcheck
+        run: shellcheck *.sh tests/*.sh package/contents/code/read.sh
+      - name: metadata.json
+        run: python3 -m json.tool package/metadata.json > /dev/null
