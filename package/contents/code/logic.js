@@ -83,6 +83,15 @@ function panelLines(s) {
 
 function panelText(s) { return panelLines(s).join(" │ "); }
 
+// Panel-Schrift: Systemschrift × Prozent, bei maxHeightPx > 0 auf die Panelhöhe
+// begrenzt (Zeilenhöhe ≈ 1.3 × Pixelgröße), damit nichts abgeschnitten wird.
+var LINE_FACTOR = 1.3;
+function panelPixelSize(basePx, scalePct, maxHeightPx) {
+  var px = Math.round(basePx * scalePct / 100);
+  if (maxHeightPx > 0) px = Math.min(px, Math.floor(maxHeightPx / LINE_FACTOR));
+  return Math.max(1, px);
+}
+
 // timeout: ein hängender sysfs-Zugriff blockiert sonst alle weiteren Takte.
 function buildCommand(scriptPath) { return "timeout 3 sh '" + scriptPath + "'"; }
 
@@ -100,5 +109,6 @@ if (typeof module !== "undefined") {
                      toWatts: toWatts, toCelsius: toCelsius, pushSample: pushSample,
                      peak: peak, formatWatts: formatWatts, formatTemp: formatTemp, formatTempLong: formatTempLong,
                      panelText: panelText, panelLines: panelLines, maxDtFor: maxDtFor,
-                     buildCommand: buildCommand, hints: hints };
+                     buildCommand: buildCommand, hints: hints,
+                     panelPixelSize: panelPixelSize };
 }

@@ -12,6 +12,7 @@ PlasmoidItem {
 
     readonly property int intervalSec: Plasmoid.configuration.intervalSec
     readonly property int historyMin: Plasmoid.configuration.historyMin
+    readonly property int fontScale: Plasmoid.configuration.fontScale
     readonly property int maxLen: Math.max(2, Math.round(historyMin * 60 / intervalSec))
     readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
@@ -102,6 +103,7 @@ PlasmoidItem {
             id: single
             visible: !root.vertical
             anchors.centerIn: parent
+            font.pixelSize: Logic.panelPixelSize(Kirigami.Theme.defaultFont.pixelSize, root.fontScale, compact.height)
             text: Logic.panelText(root.current)
         }
 
@@ -116,6 +118,7 @@ PlasmoidItem {
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
                 text: Logic.panelLines(root.current)[0]
+                font.pixelSize: Logic.panelPixelSize(Kirigami.Theme.defaultFont.pixelSize, root.fontScale, 0)
                 fontSizeMode: Text.HorizontalFit
                 minimumPixelSize: Kirigami.Theme.smallFont.pixelSize
             }
@@ -123,6 +126,7 @@ PlasmoidItem {
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
                 text: Logic.panelLines(root.current)[1]
+                font.pixelSize: Logic.panelPixelSize(Kirigami.Theme.defaultFont.pixelSize, root.fontScale, 0)
                 fontSizeMode: Text.HorizontalFit
                 minimumPixelSize: Kirigami.Theme.smallFont.pixelSize
             }
