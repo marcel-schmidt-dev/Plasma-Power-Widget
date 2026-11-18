@@ -45,7 +45,7 @@ sudo ./uninstall-permissions.sh
 
 ## Einstellungen
 
-Rechtsklick aufs Widget → „Power Widget einrichten…“: Aktualisierung (1–10 s, Standard 1 s) und Verlaufsdauer (1–10 Min., Standard 2 Min.).
+Rechtsklick aufs Widget → „Power Widget einrichten…“: Aktualisierung (1–10 s, Standard 1 s), Verlaufsdauer (1–10 Min., Standard 2 Min.) und Schriftgröße im Panel (100–200 %, Standard 100 %). In einem waagerechten Panel wird die Schrift auf die Panelhöhe begrenzt, damit nichts abgeschnitten wird.
 
 ## Warum `sudo ./install-permissions.sh`?
 

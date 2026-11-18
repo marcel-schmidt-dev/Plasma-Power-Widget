@@ -6,6 +6,7 @@ import org.kde.kcmutils as KCM
 KCM.SimpleKCM {
     property alias cfg_intervalSec: intervalSpin.value
     property alias cfg_historyMin: historySpin.value
+    property alias cfg_fontScale: fontScaleSpin.value
 
     Kirigami.FormLayout {
         QQC2.SpinBox {
@@ -19,6 +20,15 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: "Verlauf (Min.):"
             from: 1
             to: 10
+        }
+        QQC2.SpinBox {
+            id: fontScaleSpin
+            Kirigami.FormData.label: "Schriftgröße (Panel):"
+            from: 100
+            to: 200
+            stepSize: 10
+            textFromValue: (value, locale) => value + " %"
+            valueFromText: (text, locale) => parseInt(text, 10) || 100
         }
     }
 }
