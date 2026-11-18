@@ -79,3 +79,8 @@ test("panelLines zweizeilig", () => {
 test("EMOJI zentral definiert", () => {
   assert.deepEqual(L.EMOJI, { cpu: "🖥️", gpu: "🎮", power: "⚡", temp: "🌡️" });
 });
+
+test("formatTempLong für das Popup", () => {
+  assert.equal(L.formatTempLong(62.4), "62 °C");
+  assert.equal(L.formatTempLong(null), "–");
+});

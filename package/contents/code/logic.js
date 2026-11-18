@@ -68,6 +68,7 @@ function peak(arr) {
 function isNum(v) { return typeof v === "number" && isFinite(v); }
 function formatWatts(v) { return isNum(v) ? Math.round(v) + " W" : DASH; }
 function formatTemp(v) { return isNum(v) ? Math.round(v) + "°" : DASH; }
+function formatTempLong(v) { return isNum(v) ? Math.round(v) + " °C" : DASH; }
 
 function panelLines(s) {
   return [
@@ -81,6 +82,6 @@ function panelText(s) { return panelLines(s).join(" │ "); }
 if (typeof module !== "undefined") {
   module.exports = { EMOJI: EMOJI, parseReading: parseReading, cpuWatts: cpuWatts,
                      toWatts: toWatts, toCelsius: toCelsius, pushSample: pushSample,
-                     peak: peak, formatWatts: formatWatts, formatTemp: formatTemp,
+                     peak: peak, formatWatts: formatWatts, formatTemp: formatTemp, formatTempLong: formatTempLong,
                      panelText: panelText, panelLines: panelLines };
 }
