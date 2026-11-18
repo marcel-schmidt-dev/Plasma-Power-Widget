@@ -164,41 +164,53 @@ PlasmoidItem {
         }
     }
 
-    fullRepresentation: ColumnLayout {
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 20
-        Layout.minimumWidth: Kirigami.Units.gridUnit * 16
-        spacing: Kirigami.Units.largeSpacing
+    fullRepresentation: Item {
+        // Abstand zwischen Popup-Box und Inhalt; das Popup wächst um 2 × pad.
+        readonly property real pad: Kirigami.Units.largeSpacing
+        Layout.preferredWidth: content.Layout.preferredWidth + 2 * pad
+        Layout.minimumWidth: content.Layout.minimumWidth + 2 * pad
+        Layout.preferredHeight: content.implicitHeight + 2 * pad
+        Layout.minimumHeight: content.implicitHeight + 2 * pad
 
-        Block {
-            emoji: Logic.EMOJI.cpu
-            label: "CPU"
-            watts: root.cpuW
-            temp: root.cpuC
-            wattHist: root.cpuWHist
-            tempHist: root.cpuCHist
-        }
-        Block {
-            emoji: Logic.EMOJI.gpu
-            label: "GPU"
-            watts: root.gpuW
-            temp: root.gpuC
-            wattHist: root.gpuWHist
-            tempHist: root.gpuCHist
-        }
-        PlasmaComponents.Label {
-            Layout.fillWidth: true
-            text: "letzte " + root.historyMin + " Min."
-            opacity: 0.7
-            font: Kirigami.Theme.smallFont
-        }
-        Repeater {
-            model: root.hintList
+        ColumnLayout {
+            id: content
+            anchors.fill: parent
+            anchors.margins: parent.pad
+            Layout.preferredWidth: Kirigami.Units.gridUnit * 20
+            Layout.minimumWidth: Kirigami.Units.gridUnit * 16
+            spacing: Kirigami.Units.largeSpacing
+
+            Block {
+                emoji: Logic.EMOJI.cpu
+                label: "CPU"
+                watts: root.cpuW
+                temp: root.cpuC
+                wattHist: root.cpuWHist
+                tempHist: root.cpuCHist
+            }
+            Block {
+                emoji: Logic.EMOJI.gpu
+                label: "GPU"
+                watts: root.gpuW
+                temp: root.gpuC
+                wattHist: root.gpuWHist
+                tempHist: root.gpuCHist
+            }
             PlasmaComponents.Label {
-                required property string modelData
                 Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-                color: Kirigami.Theme.neutralTextColor
-                text: modelData
+                text: "letzte " + root.historyMin + " Min."
+                opacity: 0.7
+                font: Kirigami.Theme.smallFont
+            }
+            Repeater {
+                model: root.hintList
+                PlasmaComponents.Label {
+                    required property string modelData
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    color: Kirigami.Theme.neutralTextColor
+                    text: modelData
+                }
             }
         }
     }
