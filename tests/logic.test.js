@@ -108,3 +108,12 @@ test("Fix: Hinweise bei fehlendem Leserecht oder Sensor", () => {
     "GPU: kein amdgpu-Sensor gefunden",
   ]);
 });
+
+test("panelPixelSize: skaliert und auf Panelhöhe begrenzt", () => {
+  assert.equal(L.panelPixelSize(10, 100, 0), 10);
+  assert.equal(L.panelPixelSize(10, 150, 0), 15);
+  assert.equal(L.panelPixelSize(10, 200, 22), 16);
+  assert.equal(L.panelPixelSize(10, 100, 10), 7);
+  assert.equal(L.panelPixelSize(10, 150, 100), 15);
+  assert.equal(L.panelPixelSize(10, 100, 1), 1);
+});
