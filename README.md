@@ -1,6 +1,6 @@
 # Plasma-Power-Widget
 
-KDE-Plasma-6-Widget, das Leistung und Temperatur von **AMD-CPU (Ryzen)** und **AMD-GPU (Radeon)** anzeigt.
+KDE-Plasma-6-Widget, das Leistung und Temperatur von CPU und GPU anzeigt: **AMD (Ryzen/Radeon)** sowie **Intel-CPU** und **NVIDIA-GPU**.
 
 ```
 Panel:  🖥️ ⚡45 W 🌡️62° │ 🎮 ⚡120 W 🌡️70°
@@ -20,7 +20,8 @@ Ein Klick öffnet ein Popup mit Verlaufsgraphen (Watt und °C) für die letzten 
 ## Voraussetzungen
 
 - KDE Plasma 6 (getestet für 6.8)
-- AMD Ryzen und Radeon (Treiber `amdgpu`, Sensor `k10temp` oder `zenpower`)
+- CPU: AMD Ryzen (Sensor `k10temp` oder `zenpower`) oder Intel (Sensor `coretemp`)
+- GPU: AMD Radeon (Treiber `amdgpu`) oder NVIDIA mit proprietärem Treiber (`nvidia-smi`, Arch: `nvidia-utils`). Ist eine NVIDIA-Karte da, zeigt das Widget diese an.
 - Eine Emoji-Schrift für farbige Emojis, z. B. **Noto Color Emoji** (Arch: `noto-fonts-emoji`)
 
 ## Installation
@@ -49,7 +50,7 @@ Rechtsklick aufs Widget → „Power Widget einrichten…“: Aktualisierung (1�
 
 ## Warum `sudo ./install-permissions.sh`?
 
-Die CPU-Leistung kommt aus dem RAPL-Energiezähler (`/sys/class/powercap/intel-rapl:0/energy_uj`, heißt auch auf AMD so). Den darf seit 2020 nur root lesen. Das Skript legt die Regel `/etc/tmpfiles.d/plasma-power-widget.conf` an, die den Zähler bei jedem Start für alle lesbar macht.
+Die CPU-Leistung kommt aus dem RAPL-Energiezähler (`/sys/class/powercap/intel-rapl:0/energy_uj`, gilt für Intel und AMD). Den darf seit 2020 nur root lesen. Das Skript legt die Regel `/etc/tmpfiles.d/plasma-power-widget.conf` an, die den Zähler bei jedem Start für alle lesbar macht.
 
 **Risiko:** Der Kernel hat den Zugriff wegen der Seitenkanal-Lücke [PLATYPUS (CVE-2020-8694)](https://platypusattack.com/) gesperrt. Ein Programm, das bereits auf dem Rechner läuft, könnte aus sehr feinen Messungen des Energieverbrauchs Rückschlüsse auf geheime Daten anderer Programme ziehen. Für einen privaten Desktop ist das in der Regel vertretbar, auf Mehrbenutzer-Systemen oder Servern nicht. Ohne das Skript funktioniert alles außer den CPU-Watt.
 
