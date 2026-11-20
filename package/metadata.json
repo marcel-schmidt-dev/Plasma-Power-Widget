@@ -2,7 +2,7 @@
     "KPlugin": {
         "Id": "de.marcelschmidt.plasmapowerwidget",
         "Name": "Power Widget",
-        "Description": "Watt und Temperatur von AMD-CPU und -GPU",
+        "Description": "Watt und Temperatur von CPU und GPU (AMD, Intel, NVIDIA)",
         "Icon": "utilities-system-monitor",
         "Category": "System Information",
         "License": "GPL-2.0-or-later",
