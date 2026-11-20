@@ -13,10 +13,21 @@ put() { mkdir -p "$(dirname "$1/$2")"; printf '%s\n' "$3" > "$1/$2"; }
 rapl() { put "$1" sys/class/powercap/intel-rapl:0/energy_uj "$2"
          put "$1" sys/class/powercap/intel-rapl:0/max_energy_range_uj 65532610987; }
 
-# expect <case> <root> <exact line>...
+# fakesmi <datei> <ausgabe> [exitcode]: Ersatz für nvidia-smi
+fakesmi() {
+  mkdir -p "$(dirname "$1")"
+  printf '#!/bin/sh\nprintf "%%b" %q\nexit %s\n' "$2" "${3:-0}" > "$1"
+  chmod +x "$1"
+}
+
+# expect <case> <root> <exact line>...   (SMI=<pfad> setzt NVIDIA_SMI)
+SMI=""
 expect() {
   local name=$1 root=$2; shift 2
-  local out; out=$(sh "$SCRIPT" "$root"); local rc=$?
+  local out
+  if [ -n "$SMI" ]; then out=$(NVIDIA_SMI="$SMI" sh "$SCRIPT" "$root")
+  else out=$(sh "$SCRIPT" "$root"); fi
+  local rc=$?
   if [ $rc -ne 0 ]; then echo "FAIL [$name] exit $rc"; FAILS=$((FAILS+1)); fi
   for line in "$@"; do
     if ! grep -qxE -- "$line" <<<"$out"; then
@@ -70,6 +81,34 @@ if [ "$(id -u)" -ne 0 ]; then
 else
   echo "SKIP [noperm] läuft als root"
 fi
+
+# intel + nvidia
+I=$TMP/intel; rapl "$I" 1
+put "$I" sys/class/hwmon/hwmon7/name coretemp
+put "$I" sys/class/hwmon/hwmon7/temp1_input 55000
+fakesmi "$TMP/bin/smi-ok" '23.11, 53\n'
+SMI=$TMP/bin/smi-ok expect intel+nvidia "$I" 'cpu_temp_mc=55000' 'gpu_power_uw=23110000' 'gpu_temp_mc=53000'
+
+# amdgpu + nvidia: nvidia gewinnt
+SMI=$TMP/bin/smi-ok expect amdgpu+nvidia "$R" 'gpu_power_uw=23110000' 'gpu_temp_mc=53000'
+
+# nvidia ohne Leistungswert
+fakesmi "$TMP/bin/smi-na" '[N/A], 48\n'
+SMI=$TMP/bin/smi-na expect nvidia-na-power "$I" 'gpu_power_uw=' 'gpu_temp_mc=48000'
+
+# nvidia-smi scheitert: amdgpu bleibt
+fakesmi "$TMP/bin/smi-err" '' 9
+SMI=$TMP/bin/smi-err expect nvidia-fehler "$R" 'gpu_power_uw=120000000' 'gpu_temp_mc=70000'
+
+# zwei GPUs: nur die erste
+fakesmi "$TMP/bin/smi-two" '250, 61\n30.5, 40\n'
+SMI=$TMP/bin/smi-two expect nvidia-zwei "$I" 'gpu_power_uw=250000000' 'gpu_temp_mc=61000'
+
+# nvidia-smi hängt: Abbruch nach Timeout, amdgpu bleibt
+mkdir -p "$TMP/bin"; printf '#!/bin/sh\nsleep 10\necho "23.11, 53"\n' > "$TMP/bin/smi-hang"; chmod +x "$TMP/bin/smi-hang"
+START=$(date +%s)
+SMI=$TMP/bin/smi-hang expect nvidia-haengt "$R" 'gpu_power_uw=120000000' 'gpu_temp_mc=70000'
+if [ $(( $(date +%s) - START )) -ge 5 ]; then echo "FAIL [nvidia-haengt] kein Timeout"; FAILS=$((FAILS+1)); fi
 
 # keine Sensoren
 E=$TMP/empty; mkdir -p "$E/sys"

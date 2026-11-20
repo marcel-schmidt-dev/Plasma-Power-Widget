@@ -1,6 +1,7 @@
 #!/bin/sh
-# Liest Leistung und Temperatur von AMD-CPU und -GPU aus sysfs.
+# Liest Leistung und Temperatur von CPU (AMD/Intel) und GPU (AMD/NVIDIA).
 # Aufruf: read.sh [ROOT]   (ROOT nur für Tests, sonst leer = echtes /sys)
+# NVIDIA_SMI=<pfad> ersetzt nvidia-smi (Tests); mit ROOT ohne NVIDIA_SMI kein Aufruf.
 # Ausgabe: key=value-Zeilen; fehlende Werte bleiben leer. Exit-Code immer 0.
 
 ROOT=${1:-}
@@ -25,7 +26,7 @@ gpu_vram=-1
 for h in "$HWMON"/hwmon*; do
   [ -d "$h" ] || continue
   case $(val "$h/name") in
-    k10temp|zenpower)
+    k10temp|zenpower|coretemp)
       [ -z "$cpu_temp" ] && cpu_temp=$(val "$h/temp1_input")
       ;;
     amdgpu)
@@ -42,6 +43,24 @@ if [ -n "$gpu_dir" ]; then
   gpu_power=$(val "$gpu_dir/power1_average")
   [ -z "$gpu_power" ] && gpu_power=$(val "$gpu_dir/power1_input")
   gpu_temp=$(val "$gpu_dir/temp1_input")
+fi
+
+# NVIDIA (proprietärer Treiber, kein hwmon): hat Vorrang vor amdgpu.
+smi=${NVIDIA_SMI:-}
+if [ -z "$smi" ] && [ -z "$ROOT" ] && command -v nvidia-smi >/dev/null 2>&1; then smi=nvidia-smi; fi
+if [ -n "$smi" ]; then
+  # timeout: ein hängender Treiber darf die CPU-Werte nicht blockieren
+  nv=$(timeout 2 "$smi" --query-gpu=power.draw,temperature.gpu --format=csv,noheader,nounits 2>/dev/null |
+    awk -F, 'NR == 1 {
+      for (i = 1; i <= 2; i++) { gsub(/^[ \t]+|[ \t\r]+$/, "", $i); ok[i] = ($i ~ /^[0-9]+(\.[0-9]+)?$/) }
+      p = ok[1] ? sprintf("%d", $1 * 1e6 + 0.5) : ""
+      t = ok[2] ? sprintf("%d", $2 * 1000 + 0.5) : ""
+      if (ok[1] || ok[2]) print p "," t
+    }')
+  if [ -n "$nv" ]; then
+    gpu_power=${nv%,*}
+    gpu_temp=${nv#*,}
+  fi
 fi
 
 printf 'ts_ns=%s\n' "$(date +%s%N)"
